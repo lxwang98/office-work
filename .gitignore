@@ -1,0 +1,21 @@
+# 上传到 GitHub 时不要带的东西（预设仓库）
+#
+# 这个仓库根目录就是预设内容，所以忽略规则很简单：
+# 只排除临时文件与 macOS 垃圾文件。
+
+# ---- 系统垃圾文件 ----
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- 临时与缓存 ----
+__pycache__/
+*.py[cod]
+.insttest/
+*.bak-*
+*.tmp
+
+# ---- 编辑器 ----
+.vscode/
+.idea/
+*.swp
