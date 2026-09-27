@@ -220,14 +220,21 @@ office-work/                        ← 仓库根目录，名字必须正好是 
 ├── skills/
 │   └── office-writing/
 │       └── SKILL.md                文书写作技能（28 个文种提纲等）
+├── LICENSE                         Apache License 2.0
 ├── install-windows.ps1             安装脚本（Windows）
 ├── install-macos.sh                安装脚本（macOS/Linux）
-├── 一键安装（Windows）.ps1           一键安装：自动处理 office-work-main 改名问题
 ├── README.md                       本文件
-├── 发给朋友的安装说明.md              可直接转发给朋友的说明（含微信文案）
-├── 发布到GitHub指南.md               这个仓库当初怎么发布的（给你自己看）
-└── LICENSE                         许可证
+└── （其余文件：一键安装脚本、给朋友的说明、发布指南 —— 都不影响预设加载）
 ```
+
+**只有前三项是预设真正需要的**：
+
+| 文件 | 必需 | 缺了会怎样 |
+| --- | --- | --- |
+| `agent.cordis.yml` | **必需** | 预设根本不加载（DSH 不认这个目录） |
+| `preset.yml` | 可选 | 能加载，但预设列表里只显示目录名 `office-work` |
+| `skills/office-writing/SKILL.md` | 可选 | 能加载，但失去 28 个文种模板的写作能力 |
+| 其余文件 | 不需要 | 无影响，DSH 会忽略它们 |
 
 **为什么仓库根目录就直接是预设文件？** 因为这样就满足"让人的安装尽量少步骤"：
 下载 zip → 改名为 `office-work` → 丢进 `.agent-presets/` → 完成。
@@ -270,7 +277,13 @@ office-work/                        ← 仓库根目录，名字必须正好是 
 
 ## 许可
 
-MIT，见 [LICENSE](LICENSE)。随意使用、修改、再分发。
+**Apache License 2.0**，见 [LICENSE](LICENSE)。可自由使用、修改、再分发（含商业用途）；
+再分发时保留许可证副本与版权声明即可。
+
+> 说明：仓库里这份 LICENSE 是通过 GitHub 网页的「Add license」功能选 Apache-2.0 生成的 ——
+> 网页点选比手工粘贴可靠，不容易出现文件名大小写或内容不完整的问题。
+> 想换成 MIT 也可以，两者宽松程度接近；Apache-2.0 多一条明确的专利授权，
+> 对使用者反而更友好，所以**不建议改**。
 
 ## 反馈
 
