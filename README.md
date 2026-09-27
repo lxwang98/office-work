@@ -44,13 +44,13 @@
 **Windows（PowerShell 里执行）：**
 
 ```powershell
-git clone https://github.com/你的用户名/office-work "$env:USERPROFILE\.dsh\.agent-presets\office-work"
+git clone https://github.com/lxwang98/office-work "$env:USERPROFILE\.dsh\.agent-presets\office-work"
 ```
 
 **macOS / Linux（终端里执行）：**
 
 ```bash
-git clone https://github.com/你的用户名/office-work ~/.dsh/.agent-presets/office-work
+git clone https://github.com/lxwang98/office-work ~/.dsh/.agent-presets/office-work
 ```
 
 > 如果你的 DSH 装在别的位置（设过 `DSH_HOME` 环境变量），把上面的
