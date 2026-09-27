@@ -6,30 +6,6 @@
 
 **仓库地址**：<https://github.com/lxwang98/office-work>
 
-**一行命令安装（Windows，PowerShell 里整段粘贴）**：
-
-```powershell
-$repo   = 'https://github.com/lxwang98/office-work/archive/refs/heads/main.zip'
-$root   = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
-$preset = Join-Path $root '.agent-presets'
-$dest   = Join-Path $preset 'office-work'
-$tmp    = Join-Path $env:TEMP ('office-work-' + [guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Force -Path $tmp | Out-Null
-Invoke-WebRequest -Uri $repo -OutFile (Join-Path $tmp 'repo.zip') -UseBasicParsing
-Expand-Archive -Path (Join-Path $tmp 'repo.zip') -DestinationPath $tmp -Force
-$inner = Get-ChildItem $tmp -Directory | Where-Object { $_.Name -like 'office-work*' } | Select-Object -First 1
-if (Test-Path $dest) { Move-Item $dest "$dest.bak-$(Get-Date -Format yyyyMMdd-HHmmss)" }
-New-Item -ItemType Directory -Force -Path $preset | Out-Null
-Move-Item $inner.FullName $dest
-Remove-Item $tmp -Recurse -Force
-Write-Host "已装到：$dest"
-```
-
-装完**重启 DSH**，新建会话时就能在预设列表里看到「职场办公模式」。
-其它安装方式（git clone / 手动 zip / 安装脚本）见下面的[安装](#安装)一节。
-
----
-
 ## 它和普通 Agent 有什么不一样
 
 | 方面 | 普通模式 | 职场办公模式 |
@@ -61,13 +37,62 @@ Write-Host "已装到：$dest"
 
 ## 安装
 
-**前提**：你已经装了 DeepSeek Harness（DSH）。
+下面列了五种装法，**任选一种**。装完都要**重启 DSH** 才生效。
 
-有三种装法，任选一种。**装完都要重启 DSH 才会生效。**
+> **为什么推荐方式一**：不用碰命令行，对不懂技术的人最友好；
+> 代价是临时开一下「完全权限」。如果你的 DSH 不方便开，
+> 用方式二（一行命令）效果一样，而且只写 `.agent-presets` 一个目录。
 
-### 方法一：一行命令自动装（Windows，最省事）
+### 方式一：让 DSH 自己装（不用碰命令行，推荐）
 
-打开「终端」或 PowerShell，**整段粘贴下面这块**回车即可：
+**第 1 步**：把 DSH 的权限设成 **完全权限**。
+
+> **为什么要这样做**：DSH 默认只允许写「会话工作区、`/tmp`、系统临时目录」，
+> 而预设必须放在 `<DSH主目录>/.agent-presets/` 下（通常在家目录），默认写不进去。
+>
+> 源码依据（`@deepseek-ai/dsh-sandbox` 的 `writableRoots()`）：
+> 默认模式的可写范围是 `[workspaceRoot, "/tmp", tmpdir()]`；
+> 而 `danger-full-access`（完全权限）在 `@deepseek-ai/dsh-fs-sandbox` 的文档里
+> 写的是 **`delegates unfenced`** —— 不再做路径围栏。
+>
+> 装完建议切回默认权限，没必要一直开着。
+
+**第 2 步**：打开 DSH 的「创造模式」，把下面这段话**整段**发进去：
+
+```
+请帮我把这个 DSH 预设装到本地：
+https://github.com/lxwang98/office-work
+
+要求：
+1. 预设要放在 <DSH主目录>/.agent-presets/office-work/
+   （Windows 默认 %USERPROFILE%\.dsh\.agent-presets\office-work\）
+2. 目录名必须正好是 office-work（预设 id 就是目录名，只能小写字母数字连字符）
+3. 里面要有 agent.cordis.yml、preset.yml、skills/office-writing/SKILL.md
+4. 用"下载 zip + 解压"的方式，不要凭记忆重建文件内容
+5. 装完列出目录里的文件让我确认
+
+（我这边已经把权限设成完全权限，可以写到工作区外面）
+```
+
+**这五条都不是啰嗦，每条都对应一个真实的坑**：
+
+| 要求 | 不写会怎样 |
+| --- | --- |
+| 第 1 条：路径正确 | Agent 可能只下载到工作区，没放进 `.agent-presets/` |
+| 第 2 条：目录名 = `office-work` | GitHub 下载解压出来是 `office-work-main`，**DSH 认不出来**（它按目录名认 id） |
+| 第 3 条：三个文件齐全 | 缺 `preset.yml` 只是没有显示名；缺 `agent.cordis.yml` 预设根本不加载 |
+| 第 4 条：下载而不是重建 | 让它"凭记忆敲一遍"，很容易漏内容，加载会失败 |
+| 第 5 条：列出来确认 | 你没法一眼看出装没装对 |
+| 最后那句括号 | 不说的话，Agent 可能明明有权限却不敢写，反过来问你 |
+
+**第 3 步**：**重启 DSH**，新建会话时选「职场办公模式」。
+
+### 方式二：一行命令（不需要开完全权限）
+
+优点：只写 `.agent-presets` 一个目录，权限最小。
+缺点：要打开一次命令行（其实只是复制粘贴）。
+
+**Windows**（按 `Win+R` → 输入 `powershell` → 回车 → 整段粘贴）：
 
 ```powershell
 $repo   = 'https://github.com/lxwang98/office-work/archive/refs/heads/main.zip'
@@ -86,76 +111,67 @@ Remove-Item $tmp -Recurse -Force
 Write-Host "已装到：$dest"
 ```
 
-它做的四件事：下载 → 解压 → **自动把 `office-work-main` 改名为 `office-work`**
-（这一步必须做，因为预设 id 就是目录名）→ 放进 `.agent-presets`。
-已装过旧版本时会先备份。
+**macOS**（打开「终端」整段粘贴）：
 
-> **为什么要专门写这段**：如果你只是下载 zip 手动放，那个文件夹叫
-> `office-work-main`，**直接放进去 DSH 认不出来** —— 它会去找 `office-work` 这个 id。
-> 这是最容易踩的一个坑。
+```bash
+dest="$HOME/.dsh/.agent-presets/office-work"
+[ -d "$dest" ] && mv "$dest" "$dest.bak-$(date +%Y%m%d-%H%M%S)"
+mkdir -p "$(dirname "$dest")"
+tmp="$(mktemp -d)"
+curl -L -o "$tmp/repo.zip" https://github.com/lxwang98/office-work/archive/refs/heads/main.zip
+unzip -q "$tmp/repo.zip" -d "$tmp"
+mv "$tmp/office-work-main" "$dest"
+rm -rf "$tmp"
+echo "已装到：$dest"
+```
 
-### 方法二：git clone（装了 git 的话最简单）
+两段脚本做的是同一件事：下载 → 解压 → **自动把 `office-work-main` 改名为 `office-work`**
+→ 放进 `.agent-presets`。已装过旧版本会先备份。
 
-**Windows（PowerShell）：**
+### 方式三：手动下载 zip
+
+1. 在本仓库页面点绿色 **Code** → **Download ZIP**
+2. 解压，得到 `office-work-main` 文件夹
+3. **改名为 `office-work`**（不能省，理由同上）
+4. 移动到 `C:\Users\<你的用户名>\.dsh\.agent-presets\`（macOS 是 `~/.dsh/.agent-presets/`）
+
+> 目录里多出来的 README、安装脚本之类**不影响使用**，DSH 只认那两个 yml 和 `skills`。
+
+### 方式四：git clone（以后好用 `git pull` 更新）
 
 ```powershell
+# Windows（PowerShell）
 git clone https://github.com/lxwang98/office-work "$env:USERPROFILE\.dsh\.agent-presets\office-work"
 ```
 
-**macOS / Linux（终端）：**
-
 ```bash
+# macOS / Linux
 git clone https://github.com/lxwang98/office-work ~/.dsh/.agent-presets/office-work
 ```
 
-好处是仓库名就叫 `office-work`，克隆下来目录名天然正确，不用改名。
-以后想更新，在预设目录里 `git pull` 即可。
+仓库名就叫 `office-work`，克隆下来目录名天然正确，不用改名。
 
-### 方法三：手动下载 zip
+### 方式五：用仓库里的安装脚本
 
-1. 在本仓库页面点绿色的 **Code** 按钮 → **Download ZIP**
-2. 解压，得到一个叫 `office-work-main` 的文件夹
-3. **把它改名为 `office-work`**（这一步不能省，理由同上）
-4. 把它整个移动到：
-   - Windows：`C:\Users\<你的用户名>\.dsh\.agent-presets\`
-   - macOS：`~/.dsh/.agent-presets/`
-   - 如果设过 `DSH_HOME`：`$DSH_HOME\.agent-presets\`
-
-最终目录结构应该是这样：
-
-```
-.dsh/.agent-presets/office-work/
-├── agent.cordis.yml              ← 预设本体（组合文件）
-├── preset.yml                    ← 显示名与描述
-└── skills/
-    └── office-writing/
-        └── SKILL.md              ← 文书写作技能
-```
-
-> 目录里多出来 README、安装脚本之类的文件**不影响使用**，DSH 只认那两个 yml 和 skills。
-
-### 方法四：用仓库里的安装脚本
-
-仓库里带了两个脚本，它们会自动找到 DSH 的位置并装好：
+仓库里带了两个脚本，会自动找到 DSH 的位置并装好：
 
 **Windows**：右键 `install-windows.ps1` → 「使用 PowerShell 运行」
 （如果提示脚本被禁用，先在 PowerShell 里执行一次
-`Set-ExecutionPolicy -Scope Process Bypass`）
+`Set-ExecutionPolicy -Scope Process Bypass` 再运行）
 
-**macOS / Linux**：
+**macOS / Linux**：在仓库目录里执行
 
 ```bash
 bash install-macos.sh
 ```
 
-### 装好之后怎么用
+### 装好之后怎么确认
 
 1. **重启 DSH**（预设是启动时读取的）
-2. 新建会话时，在预设列表里选 **职场办公模式**
-3. 开始用它
-
-**验证是否装好**：在 DSH 里看预设列表有没有「职场办公模式」这一项。
-如果出现了但旁边标着"损坏"，通常是 DSH 版本太旧（见下面的「依赖」）。
+2. 新建会话时，预设列表里应有「职场办公模式」
+3. 如果显示出来了但旁边标着"损坏" → 通常是 DSH 版本较旧，缺某个插件包
+   （见下面[依赖](#依赖)一节）；也可能是 `agent.cordis.yml` 没下载完整
+4. 选它，问一句「你能做什么」，它会用业务语言回答（而不是列函数名）
 
 ---
 
@@ -206,7 +222,10 @@ office-work/                        ← 仓库根目录，名字必须正好是 
 │       └── SKILL.md                文书写作技能（28 个文种提纲等）
 ├── install-windows.ps1             安装脚本（Windows）
 ├── install-macos.sh                安装脚本（macOS/Linux）
+├── 一键安装（Windows）.ps1           一键安装：自动处理 office-work-main 改名问题
 ├── README.md                       本文件
+├── 发给朋友的安装说明.md              可直接转发给朋友的说明（含微信文案）
+├── 发布到GitHub指南.md               这个仓库当初怎么发布的（给你自己看）
 └── LICENSE                         许可证
 ```
 
