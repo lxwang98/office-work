@@ -4,6 +4,30 @@
 > 装上之后，你的 DSH 会多出一个叫「职场办公模式」的选项，专门用来处理表格、写公文材料、
 > 整理文件——而且**不写代码也能用**。
 
+**仓库地址**：<https://github.com/lxwang98/office-work>
+
+**一行命令安装（Windows，PowerShell 里整段粘贴）**：
+
+```powershell
+$repo   = 'https://github.com/lxwang98/office-work/archive/refs/heads/main.zip'
+$root   = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+$preset = Join-Path $root '.agent-presets'
+$dest   = Join-Path $preset 'office-work'
+$tmp    = Join-Path $env:TEMP ('office-work-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+Invoke-WebRequest -Uri $repo -OutFile (Join-Path $tmp 'repo.zip') -UseBasicParsing
+Expand-Archive -Path (Join-Path $tmp 'repo.zip') -DestinationPath $tmp -Force
+$inner = Get-ChildItem $tmp -Directory | Where-Object { $_.Name -like 'office-work*' } | Select-Object -First 1
+if (Test-Path $dest) { Move-Item $dest "$dest.bak-$(Get-Date -Format yyyyMMdd-HHmmss)" }
+New-Item -ItemType Directory -Force -Path $preset | Out-Null
+Move-Item $inner.FullName $dest
+Remove-Item $tmp -Recurse -Force
+Write-Host "已装到：$dest"
+```
+
+装完**重启 DSH**，新建会话时就能在预设列表里看到「职场办公模式」。
+其它安装方式（git clone / 手动 zip / 安装脚本）见下面的[安装](#安装)一节。
+
 ---
 
 ## 它和普通 Agent 有什么不一样
@@ -39,32 +63,61 @@
 
 **前提**：你已经装了 DeepSeek Harness（DSH）。
 
-### 方法一：一条命令（推荐）
+有三种装法，任选一种。**装完都要重启 DSH 才会生效。**
 
-**Windows（PowerShell 里执行）：**
+### 方法一：一行命令自动装（Windows，最省事）
+
+打开「终端」或 PowerShell，**整段粘贴下面这块**回车即可：
+
+```powershell
+$repo   = 'https://github.com/lxwang98/office-work/archive/refs/heads/main.zip'
+$root   = if ($env:DSH_HOME) { $env:DSH_HOME } else { Join-Path $env:USERPROFILE '.dsh' }
+$preset = Join-Path $root '.agent-presets'
+$dest   = Join-Path $preset 'office-work'
+$tmp    = Join-Path $env:TEMP ('office-work-' + [guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+Invoke-WebRequest -Uri $repo -OutFile (Join-Path $tmp 'repo.zip') -UseBasicParsing
+Expand-Archive -Path (Join-Path $tmp 'repo.zip') -DestinationPath $tmp -Force
+$inner = Get-ChildItem $tmp -Directory | Where-Object { $_.Name -like 'office-work*' } | Select-Object -First 1
+if (Test-Path $dest) { Move-Item $dest "$dest.bak-$(Get-Date -Format yyyyMMdd-HHmmss)" }
+New-Item -ItemType Directory -Force -Path $preset | Out-Null
+Move-Item $inner.FullName $dest
+Remove-Item $tmp -Recurse -Force
+Write-Host "已装到：$dest"
+```
+
+它做的四件事：下载 → 解压 → **自动把 `office-work-main` 改名为 `office-work`**
+（这一步必须做，因为预设 id 就是目录名）→ 放进 `.agent-presets`。
+已装过旧版本时会先备份。
+
+> **为什么要专门写这段**：如果你只是下载 zip 手动放，那个文件夹叫
+> `office-work-main`，**直接放进去 DSH 认不出来** —— 它会去找 `office-work` 这个 id。
+> 这是最容易踩的一个坑。
+
+### 方法二：git clone（装了 git 的话最简单）
+
+**Windows（PowerShell）：**
 
 ```powershell
 git clone https://github.com/lxwang98/office-work "$env:USERPROFILE\.dsh\.agent-presets\office-work"
 ```
 
-**macOS / Linux（终端里执行）：**
+**macOS / Linux（终端）：**
 
 ```bash
 git clone https://github.com/lxwang98/office-work ~/.dsh/.agent-presets/office-work
 ```
 
-> 如果你的 DSH 装在别的位置（设过 `DSH_HOME` 环境变量），把上面的
-> `.dsh` 换成你的 `DSH_HOME` 路径。
->
-> 没有装 git？用下面的方法二。
+好处是仓库名就叫 `office-work`，克隆下来目录名天然正确，不用改名。
+以后想更新，在预设目录里 `git pull` 即可。
 
-### 方法二：下载 zip（不用装任何东西）
+### 方法三：手动下载 zip
 
 1. 在本仓库页面点绿色的 **Code** 按钮 → **Download ZIP**
 2. 解压，得到一个叫 `office-work-main` 的文件夹
-3. **把它改名为 `office-work`**（这一步必须做，因为预设 id 就是文件夹名）
+3. **把它改名为 `office-work`**（这一步不能省，理由同上）
 4. 把它整个移动到：
-   - Windows：`C:\Users\你的用户名\.dsh\.agent-presets\`
+   - Windows：`C:\Users\<你的用户名>\.dsh\.agent-presets\`
    - macOS：`~/.dsh/.agent-presets/`
    - 如果设过 `DSH_HOME`：`$DSH_HOME\.agent-presets\`
 
@@ -79,7 +132,9 @@ git clone https://github.com/lxwang98/office-work ~/.dsh/.agent-presets/office-w
         └── SKILL.md              ← 文书写作技能
 ```
 
-### 方法三：用现成的安装脚本
+> 目录里多出来 README、安装脚本之类的文件**不影响使用**，DSH 只认那两个 yml 和 skills。
+
+### 方法四：用仓库里的安装脚本
 
 仓库里带了两个脚本，它们会自动找到 DSH 的位置并装好：
 
